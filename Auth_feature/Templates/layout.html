@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Cabinet Médical{% endblock %}</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+</head>
+<body>
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+            <i class="fas fa-hospital"></i> Cabinet Médical
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                {% if session.user_id %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('dashboard') }}">
+                        <i class="fas fa-tachometer-alt"></i> Tableau de bord
+                    </a>
+                </li>
+
+                <!-- Liens pour Admin -->
+                {% if session.user_role == 'admin' %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-users-cog"></i> Administration
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ url_for('ajouter_patient') }}">
+                            <i class="fas fa-user-plus"></i> Ajouter Patient
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('ajouter_medecin') }}">
+                            <i class="fas fa-user-md"></i> Ajouter Médecin
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ url_for('liste_patients') }}">
+                            <i class="fas fa-list"></i> Liste Patients
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('liste_medecins') }}">
+                            <i class="fas fa-list"></i> Liste Médecins
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ url_for('sync_data') }}">
+                            <i class="fas fa-sync"></i> Synchroniser BDD
+                        </a></li>
+                    </ul>
+                </li>
+                {% endif %}
+
+                <!-- Liens pour Médecin -->
+                {% if session.user_role in ['admin', 'medecin'] %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('ajouter_consultation') }}">
+                        <i class="fas fa-stethoscope"></i> Nouvelle Consultation
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('liste_consultations') }}">
+                        <i class="fas fa-clipboard-list"></i> Consultations
+                    </a>
+                </li>
+                {% endif %}
+
+                <!-- Liens pour Patient -->
+                {% if session.user_role in ['admin', 'patient'] %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('historique_patient') }}">
+                        <i class="fas fa-history"></i> Mon Historique
+                    </a>
+                </li>
+                {% endif %}
+                {% endif %}
+            </ul>
+
+            <ul class="navbar-nav">
+                {% if session.user_id %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user"></i>
+                        {{ session.user_prenom or 'Utilisateur' }}
+                        <span class="badge bg-light text-dark ms-1">{{ session.user_role or 'user' }}</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><h6 class="dropdown-header">
+                            {{ session.user_prenom }} {{ session.user_nom }}
+                        </h6></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ url_for('profile') }}">
+                            <i class="fas fa-user-edit"></i> Mon Profil
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('settings') }}">
+                            <i class="fas fa-cog"></i> Paramètres
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
+                            <i class="fas fa-sign-out-alt"></i> Déconnexion
+                        </a></li>
+                    </ul>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('login') }}">
+                        <i class="fas fa-sign-in-alt"></i> Connexion
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('register') }}">
+                        <i class="fas fa-user-plus"></i> Inscription
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Messages Flash Globaux -->
+<div class="container mt-3">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ 'danger' if category=='error' else 'success' if category=='success' else 'info' }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+</div>
+
+<!-- Contenu Principal -->
+<main class="container mt-4">
+    {% block content %}{% endblock %}
+</main>
+
+<!-- Footer -->
+<footer class="bg-light mt-5 py-4">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6">
+                <h5><i class="fas fa-hospital"></i> Cabinet Médical</h5>
+                <p class="text-muted">Système de gestion médicale moderne</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <p class="text-muted mb-0">
+                    <small>
+                        Développé avec
+                        <i class="fas fa-heart text-danger"></i>
+                        par l'équipe du projet
+                    </small>
+                </p>
+                <p class="text-muted">
+                    <small>
+                        <i class="fas fa-database"></i> MongoDB + Neo4j
+                        | <i class="fab fa-python"></i> Flask
+                    </small>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+
+<!-- Script pour auto-masquer les alertes -->
+<script>
+    // Auto-masquer les alertes après 5 secondes
+    setTimeout(function() {
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(function(alert) {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        });
+    }, 5000);
+
+    // Confirmer la déconnexion
+    document.addEventListener('DOMContentLoaded', function() {
+        const logoutLink = document.querySelector('a[href*="logout"]');
+        if (logoutLink) {
+            logoutLink.addEventListener('click', function(e) {
+                if (!confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
+                    e.preventDefault();
+                }
+            });
+        }
+    });
+</script>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>
